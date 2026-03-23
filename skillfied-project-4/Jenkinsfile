@@ -1,0 +1,48 @@
+pipeline{
+   agent{
+     label 'docker'
+   }
+   environment{
+      IMAGE_NAME = "myapp:${BUILD_ID}"
+      CONTAINER_NAME = "app1"
+      PORT = "32800"
+   }
+
+   stages {
+    
+    stage('Build-Image') {
+       steps{
+          sh 'docker build -t $IMAGE_NAME --no-cache .'
+       }
+     }
+
+    stage('Deploy Container') {
+      steps {
+         sh '''
+            docker stop $CONTAINER_NAME || true
+            docker rm   $CONTAINER_NAME || true
+            docker run --name $CONTAINER_NAME -dit -p $PORT:80 $IMAGE_NAME
+         '''
+      }
+    }
+  
+    stage('Verify') {
+      steps{
+        sh ' docker ps -a'
+      }
+    }
+  }
+  
+  post {
+
+    success {
+        echo 'Deployment Succesfull'
+    }
+ 
+    failure {
+      echo 'Deployment Failed'
+    }
+  }
+}
+
+   
